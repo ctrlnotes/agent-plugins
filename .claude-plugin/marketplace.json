@@ -1,0 +1,19 @@
+{
+  "name": "ctrlnotes",
+  "owner": {
+    "name": "Ctrl Notes",
+    "url": "https://ctrlnotes.app"
+  },
+  "description": "The Ctrl Notes plugin.",
+  "plugins": [
+    {
+      "name": "ctrlnotes",
+      "source": {
+        "source": "github",
+        "repo": "ctrlnotes/agent-plugins"
+      },
+      "description": "Search, read and edit your Obsidian vault through Ctrl Notes.",
+      "category": "productivity"
+    }
+  ]
+}

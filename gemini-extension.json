@@ -1,0 +1,10 @@
+{
+  "name": "ctrlnotes",
+  "version": "0.1.0",
+  "description": "Search, read and edit your Obsidian vault through Ctrl Notes.",
+  "mcpServers": {
+    "ctrlnotes": {
+      "httpUrl": "https://mcp.ctrlnotes.app/mcp"
+    }
+  }
+}

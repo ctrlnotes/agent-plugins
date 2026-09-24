@@ -1,0 +1,101 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CLAUDE_CODE_VERSION: 2.1.281
+  GEMINI_CLI_VERSION: 0.61.0
+  CODEX_VERSION: 0.156.1
+  JSONSCHEMA_VERSION: 4.26.0
+  # agentplugins/agent-plugins-spec at the 1.0.0 schemas.
+  AGENT_PLUGINS_SPEC_SHA: ff8ab5e392cc87bd88d87c060815a87490e51003
+
+jobs:
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+
+      - name: Manifests agree with one another and with Agent Plugins 1.0
+        run: |
+          pip install --quiet "jsonschema==$JSONSCHEMA_VERSION"
+          mkdir -p "$RUNNER_TEMP/schemas"
+          for s in plugin mcp; do
+            curl -fsSL -o "$RUNNER_TEMP/schemas/$s.schema.json" \
+              "https://raw.githubusercontent.com/agentplugins/agent-plugins-spec/$AGENT_PLUGINS_SPEC_SHA/schemas/1.0.0/$s.schema.json"
+          done
+          python .github/scripts/check.py "$RUNNER_TEMP/schemas"
+
+      - name: Claude Code accepts the marketplace, plugin and skills
+        run: |
+          npm install --global --silent "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION"
+          claude plugin validate . --strict
+          claude plugin validate .claude-plugin/plugin.json --strict
+          claude plugin validate skills --strict
+
+      # A version pins what users have installed: Claude Code, Codex and Gemini
+      # only offer an update when it changes. A change to anything that ships
+      # without a bump would never reach anyone who already has the plugin.
+      - name: A change that ships bumps the version
+        if: github.event_name == 'pull_request'
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          shipped=$(git diff --name-only "$base" HEAD -- . \
+            ':!README.md' ':!SECURITY.md' ':!.github/**')
+          if [ -z "$shipped" ]; then
+            echo "Nothing that ships changed."
+            exit 0
+          fi
+          before=$(git show "$base:plugin.json" | jq -r .version)
+          after=$(jq -r .version plugin.json)
+          if [ "$before" = "$after" ]; then
+            echo "::error::These files ship but plugin.json is still $after:"
+            echo "$shipped"
+            exit 1
+          fi
+          echo "Version $before -> $after"
+
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+
+      - name: Gemini CLI installs the extension with its server and skill
+        run: |
+          npm install --global --silent "@google/gemini-cli@$GEMINI_CLI_VERSION"
+          export HOME="$RUNNER_TEMP/gemini-home"
+          mkdir -p "$HOME"
+          # The only prompt is whether to trust the source folder.
+          echo y | gemini extensions install "$GITHUB_WORKSPACE" --consent
+          gemini extensions list < /dev/null | tee list.txt
+          grep -q 'ctrlnotes' list.txt
+          grep -A1 'MCP servers:' list.txt | grep -q ctrlnotes
+          grep -A1 'Agent skills:' list.txt | grep -q ctrlnotes
+
+      - name: Codex installs the plugin and registers the server
+        run: |
+          npm install --global --silent "@openai/codex@$CODEX_VERSION"
+          export CODEX_HOME="$RUNNER_TEMP/codex-home"
+          mkdir -p "$CODEX_HOME"
+          codex plugin marketplace add "$GITHUB_WORKSPACE" < /dev/null
+          codex plugin add ctrlnotes@ctrlnotes < /dev/null
+          codex mcp list < /dev/null | tee mcp.txt
+          grep -q 'https://mcp.ctrlnotes.app/mcp' mcp.txt
