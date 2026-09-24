@@ -85,7 +85,8 @@ jobs:
           mkdir -p "$HOME"
           # The only prompt is whether to trust the source folder.
           echo y | gemini extensions install "$GITHUB_WORKSPACE" --consent
-          gemini extensions list < /dev/null | tee list.txt
+          # `extensions list` prints to stderr.
+          gemini extensions list < /dev/null 2>&1 | tee list.txt
           grep -q 'ctrlnotes' list.txt
           grep -A1 'MCP servers:' list.txt | grep -q ctrlnotes
           grep -A1 'Agent skills:' list.txt | grep -q ctrlnotes
@@ -97,5 +98,5 @@ jobs:
           mkdir -p "$CODEX_HOME"
           codex plugin marketplace add "$GITHUB_WORKSPACE" < /dev/null
           codex plugin add ctrlnotes@ctrlnotes < /dev/null
-          codex mcp list < /dev/null | tee mcp.txt
+          codex mcp list < /dev/null 2>&1 | tee mcp.txt
           grep -q 'https://mcp.ctrlnotes.app/mcp' mcp.txt
