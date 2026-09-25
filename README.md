@@ -104,8 +104,9 @@ Ctrl Notes, which answers from your own vault. See the
 
 ## Support
 
-Open an [issue](https://github.com/ctrlnotes/agent-plugins/issues). To report
-a security problem, see [SECURITY.md](SECURITY.md).
+Email [support@ctrlnotes.app](mailto:support@ctrlnotes.app), or open an
+[issue](https://github.com/ctrlnotes/agent-plugins/issues). To report a security
+problem, see [SECURITY.md](SECURITY.md).
 
 ## Releasing
 

@@ -1,8 +1,9 @@
 # Security
 
-Please report a vulnerability privately, through
-[GitHub's private vulnerability reporting](https://github.com/ctrlnotes/agent-plugins/security/advisories/new),
-not in a public issue.
+Please report a vulnerability privately, not in a public issue. Either:
+
+- email [security@ctrlnotes.app](mailto:security@ctrlnotes.app), or
+- use [GitHub's private vulnerability reporting](https://github.com/ctrlnotes/agent-plugins/security/advisories/new).
 
 That covers this plugin and the Ctrl Notes service it connects to, including
 the MCP server at `mcp.ctrlnotes.app` and sign-in. We will acknowledge a report,
